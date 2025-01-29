@@ -76,7 +76,8 @@ def main(args):
     )
     vl_gpt = vl_gpt.cuda().eval()
 
-    # single image conversation example
+    # multiple images conversation example
+    # Please note that <|grounding|> token is specifically designed for the grounded caption feature. It is not needed for normal conversations.
     conversation = [
         {
             "role": "<|User|>",
@@ -89,27 +90,10 @@ def main(args):
         {"role": "<|Assistant|>", "content": ""},
     ]
 
-    # conversation = [
-    #     {
-    #         "role": "<|User|>",
-    #         "content": "<image>\n<|ref|>The giraffe at the back.<|/ref|>.",
-    #         "images": ["./images/visual_grounding_1.jpeg"],
-    #     },
-    #     {"role": "<|Assistant|>", "content": ""},
-    # ]
 
     # load images and prepare for inputs
     pil_images = load_pil_images(conversation)
     print(f"len(pil_images) = {len(pil_images)}")
-
-    # input_ids = batched_input_ids,
-    # attention_mask = batched_attention_mask,
-    # labels = batched_labels,
-    # images_tiles = batched_images,
-    # images_seq_mask = batched_images_seq_mask,
-    # images_spatial_crop = batched_images_spatial_crop,
-    # sft_format = batched_sft_format,
-    # seq_lens = seq_lens
 
     prepare_inputs = vl_chat_processor.__call__(
         conversations=conversation,
@@ -117,13 +101,6 @@ def main(args):
         force_batchify=True,
         system_prompt=""
     ).to(vl_gpt.device, dtype=dtype)
-
-    # for key in prepare_inputs.keys():
-    #     value = prepare_inputs[key]
-    #     if isinstance(value, list):
-    #         print(key, len(value), type(value))
-    #     elif isinstance(value, torch.Tensor):
-    #         print(key, value.shape, type(value))
 
     with torch.no_grad():
 

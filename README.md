@@ -119,6 +119,8 @@ vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(model_pat
 vl_gpt = vl_gpt.to(torch.bfloat16).cuda().eval()
 
 ## single image conversation example
+## Please note that <|ref|> and <|/ref|> are designed specifically for the object localization feature. These special tokens are not required for normal conversations.
+## If you would like to experience the grounded captioning functionality (responses that include both object localization and reasoning), you need to add the special token <|grounding|> at the beginning of the prompt. Examples could be found in Figure 9 of our paper.
 conversation = [
     {
         "role": "<|User|>",
@@ -334,10 +336,10 @@ This is image_3: <image>
 ### Full Inference Example
 ```shell
 # without incremental prefilling
-CUDA_VISIBLE_DEVICES=0 python inference.py --model_patn "deepseek-ai/deepseek-vl2"
+CUDA_VISIBLE_DEVICES=0 python inference.py --model_path "deepseek-ai/deepseek-vl2"
 
 # with incremental prefilling, when using 40G GPU for vl2-small
-CUDA_VISIBLE_DEVICES=0 python inference.py --model_patn "deepseek-ai/deepseek-vl2-small" --chunck_size 512
+CUDA_VISIBLE_DEVICES=0 python inference.py --model_path "deepseek-ai/deepseek-vl2-small" --chunk_size 512
 
 ```
 
