@@ -15,6 +15,7 @@ dependencies = [
     "torch==2.0.1",
     "transformers==4.38.2",
     "timm>=0.9.16",
+    "xformers>=0.0.21",
     "accelerate",
     "sentencepiece",
     "attrdict",
