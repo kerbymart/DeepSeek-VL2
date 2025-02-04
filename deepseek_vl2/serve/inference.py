@@ -22,7 +22,6 @@ from typing import List
 
 import torch
 import transformers
-from joblib.externals.cloudpickle import instance
 from transformers import (
     AutoModelForCausalLM,
     StoppingCriteria,
