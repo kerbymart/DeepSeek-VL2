@@ -69,7 +69,7 @@ Zhiyu Wu*, Xiaokang Chen*, Zizheng Pan*, Xingchao Liu*, Wen Liu**, Damai Dai, Hu
 ![](./images/vl2_teaser.jpeg)
 
 ## 2. Release
-✅ <b>2025-2-6</b>: Naive Gradio Demo on Huggingface Space [deepseek-vl2-small](https://huggingface.co/spaces/deepseek-ai/deepseek-vl2-small).
+✅ <b>2025-2-6</b>: Naive Implemented Gradio Demo on Huggingface Space [deepseek-vl2-small](https://huggingface.co/spaces/deepseek-ai/deepseek-vl2-small).
 
 ✅ <b>2024-12-25</b>: Gradio Demo Example, Incremental Prefilling and VLMEvalKit Support.
 
