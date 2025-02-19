@@ -1,4 +1,3 @@
-from attrdict import AttrDict
 from dataclasses import dataclass
 import logging
 import gc
