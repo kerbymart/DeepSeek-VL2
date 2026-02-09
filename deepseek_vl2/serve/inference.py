@@ -73,7 +73,9 @@ def load_model(model_path, dtype=torch.bfloat16):
 
     vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
         model_path, config=config, trust_remote_code=True, torch_dtype=dtype,
-        low_cpu_mem_usage=True  # Reduce CPU memory usage during loading
+        low_cpu_mem_usage=True,  # Reduce CPU memory usage during loading
+        device_map="auto",  # Automatically distribute across available devices
+        offload_folder="./offload"  # Folder to offload tensors if needed
     )
     vl_gpt = vl_gpt.cuda().eval()
     return tokenizer, vl_gpt, vl_chat_processor
