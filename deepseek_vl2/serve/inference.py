@@ -199,9 +199,6 @@ def generate(
     generation_config = dict(
         inputs_embeds=inputs_embeds,
         input_ids=prepare_inputs.input_ids,
-        images=prepare_inputs.images,
-        images_seq_mask=prepare_inputs.images_seq_mask,
-        images_spatial_crop=prepare_inputs.images_spatial_crop,
         attention_mask=prepare_inputs.attention_mask,
         past_key_values=past_key_values,
         pad_token_id=tokenizer.eos_token_id,
@@ -209,11 +206,11 @@ def generate(
         eos_token_id=tokenizer.eos_token_id,
         max_new_tokens=max_gen_len,
         do_sample=True,
-        use_cache=True,
+        use_cache=True,  # Keep cache enabled for efficiency
         streamer=streamer,
         stopping_criteria=stopping_criteria,
         # Memory optimization for limited VRAM
-        max_time=120.0,  # Limit generation time
+        max_time=60.0,  # Limit generation time
     )
 
     if temperature > 0:
