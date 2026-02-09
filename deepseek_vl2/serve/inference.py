@@ -225,18 +225,25 @@ def generate(
     else:
         generation_config["do_sample"] = False
 
+    # Aggressive memory management before generation
+    torch.cuda.empty_cache()
+    import gc
+    gc.collect()
+    
     # Monitor memory before generation
     initial_memory = torch.cuda.memory_allocated()
     
     thread = Thread(target=vl_gpt.generate, kwargs=generation_config)
     thread.start()
 
-    # Stream results with memory monitoring
+    # Stream results with aggressive memory monitoring
     for token in streamer:
         yield token
-        # Periodically check memory usage and clear cache if needed
-        if torch.cuda.memory_allocated() > initial_memory * 1.5:  # 50% increase
+        # More aggressive memory management
+        if torch.cuda.memory_allocated() > initial_memory * 1.3:  # 30% increase threshold
             torch.cuda.empty_cache()
+            gc.collect()
 
     # Clear CUDA cache to free memory after generation
     torch.cuda.empty_cache()
+    gc.collect()
