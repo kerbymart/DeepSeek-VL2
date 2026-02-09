@@ -355,13 +355,16 @@ def predict(
         except Exception as e:
             print(f"Error loading image: {e}")
 
+    # Cap context length to prevent memory issues with history tokens
+    capped_context_length = min(max_context_length_tokens, 2048)  # Cap at 2048 for memory safety
+
     conversation = generate_prompt_with_history(
         text,
         pil_images,
         history,
         vl_chat_processor,
         tokenizer,
-        max_length=max_context_length_tokens,
+        max_length=capped_context_length,
     )
     all_conv, last_image = convert_conversation_to_prompts(conversation)
 
@@ -369,11 +372,16 @@ def predict(
     gradio_chatbot_output = to_gradio_chatbot(conversation)
 
     full_response = ""
-    
+
     # Memory optimization: Cap max_length to prevent out-of-memory errors on limited VRAM
     # Original value from UI slider might be too high for 8GB VRAM systems
-    capped_max_length = min(max_length_tokens, 256)  # Cap at 256 tokens for memory safety
-    
+    capped_max_length = min(max_length_tokens, 128)  # Cap at 128 tokens for better memory safety
+
+    # Aggressive memory management before generation
+    torch.cuda.empty_cache()
+    import gc
+    gc.collect()
+
     with torch.no_grad():
         for x in deepseek_generate(
             conversations=all_conv,
@@ -396,6 +404,10 @@ def predict(
             # sys.stdout.flush()
 
             yield gradio_chatbot_output, to_gradio_history(conversation), "Generating..."
+
+    # Clear memory after generation
+    torch.cuda.empty_cache()
+    gc.collect()
 
     if last_image is not None:
         # TODO always render the last image's visual grounding image
