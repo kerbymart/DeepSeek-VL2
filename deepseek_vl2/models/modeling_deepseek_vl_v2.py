@@ -374,6 +374,14 @@ class DeepseekVLV2ForCausalLM(DeepseekVLV2PreTrainedModel):
         if total_tiles.shape[0] == 0:
             return self.language.get_input_embeddings()(input_ids)
 
+        # --- FIX FOR GPU COMPATIBILITY ---
+        # Ensure total_tiles is cast to the same dtype as the vision model's parameters
+        # This prevents the "Input type (BFloat16) and bias type (Half) should be the same" error.
+        vision_dtype = next(self.vision.parameters()).dtype
+        if total_tiles.dtype != vision_dtype:
+            total_tiles = total_tiles.to(dtype=vision_dtype)
+        # ----------------------------------
+
         # [batch_all_tiles, vit_seq_len, c]
         images_feature = self.vision(total_tiles)
 
