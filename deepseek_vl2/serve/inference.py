@@ -72,7 +72,8 @@ def load_model(model_path, dtype=torch.bfloat16):
             lang_cfg.qk_nope_head_dim = 128  # Default value from the configuration file
 
     vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
-        model_path, config=config, trust_remote_code=True, torch_dtype=dtype
+        model_path, config=config, trust_remote_code=True, torch_dtype=dtype,
+        low_cpu_mem_usage=True  # Reduce CPU memory usage during loading
     )
     vl_gpt = vl_gpt.cuda().eval()
     return tokenizer, vl_gpt, vl_chat_processor
@@ -165,7 +166,7 @@ def generate(
     vl_gpt,
     tokenizer,
     prepare_inputs,
-    max_gen_len: int = 256,
+    max_gen_len: int = 128,  # Reduced for memory efficiency on limited VRAM
     temperature: float = 0,
     repetition_penalty=1.1,
     top_p: float = 0.95,
@@ -211,6 +212,8 @@ def generate(
         use_cache=True,
         streamer=streamer,
         stopping_criteria=stopping_criteria,
+        # Memory optimization for limited VRAM
+        max_time=120.0,  # Limit generation time
     )
 
     if temperature > 0:
@@ -229,3 +232,6 @@ def generate(
     thread.start()
 
     yield from streamer
+
+    # Clear CUDA cache to free memory
+    torch.cuda.empty_cache()
