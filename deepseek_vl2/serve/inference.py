@@ -71,11 +71,23 @@ def load_model(model_path, dtype=torch.bfloat16):
         if not hasattr(lang_cfg, 'qk_nope_head_dim') or lang_cfg.qk_nope_head_dim is None:
             lang_cfg.qk_nope_head_dim = 128  # Default value from the configuration file
 
-    vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
-        model_path, config=config, trust_remote_code=True, torch_dtype=dtype,
-        low_cpu_mem_usage=True  # Reduce CPU memory usage during loading
-    )
-    vl_gpt = vl_gpt.cuda().eval()
+    # Check if multiple GPUs are available and use device_map for model parallelism
+    import torch
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs for model parallelism")
+        # Use auto device_map to distribute model across available GPUs
+        vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
+            model_path, config=config, trust_remote_code=True, torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            device_map="balanced"  # Distribute model across available GPUs
+        )
+        vl_gpt = vl_gpt.eval()  # Only call eval(), not cuda() since device_map handles placement
+    else:
+        vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
+            model_path, config=config, trust_remote_code=True, torch_dtype=dtype,
+            low_cpu_mem_usage=True  # Reduce CPU memory usage during loading
+        )
+        vl_gpt = vl_gpt.cuda().eval()
     
     # Clear cache after model loading to free up memory
     torch.cuda.empty_cache()
