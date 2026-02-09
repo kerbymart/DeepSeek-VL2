@@ -369,6 +369,11 @@ def predict(
     gradio_chatbot_output = to_gradio_chatbot(conversation)
 
     full_response = ""
+    
+    # Memory optimization: Cap max_length to prevent out-of-memory errors on limited VRAM
+    # Original value from UI slider might be too high for 8GB VRAM systems
+    capped_max_length = min(max_length_tokens, 256)  # Cap at 256 tokens for memory safety
+    
     with torch.no_grad():
         for x in deepseek_generate(
             conversations=all_conv,
@@ -376,7 +381,7 @@ def predict(
             vl_chat_processor=vl_chat_processor,
             tokenizer=tokenizer,
             stop_words=stop_words,
-            max_length=max_length_tokens,
+            max_length=capped_max_length,  # Use capped value instead of user input
             temperature=temperature,
             repetition_penalty=repetition_penalty,
             top_p=top_p,
