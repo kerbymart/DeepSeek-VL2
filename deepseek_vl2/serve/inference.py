@@ -128,7 +128,7 @@ def deepseek_generate(
     vl_chat_processor: DeepseekVLV2Processor,
     tokenizer: transformers.PreTrainedTokenizer,
     stop_words: list,
-    max_length: int = 256,
+    max_length: int = 128,  # Reduced for memory efficiency
     temperature: float = 1.0,
     top_p: float = 1.0,
     repetition_penalty: float = 1.1,
@@ -166,7 +166,7 @@ def generate(
     vl_gpt,
     tokenizer,
     prepare_inputs,
-    max_gen_len: int = 128,  # Reduced for memory efficiency on limited VRAM
+    max_gen_len: int = 64,  # Further reduced for better memory efficiency on limited VRAM
     temperature: float = 0,
     repetition_penalty=1.1,
     top_p: float = 0.95,
@@ -228,10 +228,18 @@ def generate(
     else:
         generation_config["do_sample"] = False
 
+    # Monitor memory before generation
+    initial_memory = torch.cuda.memory_allocated()
+    
     thread = Thread(target=vl_gpt.generate, kwargs=generation_config)
     thread.start()
 
-    yield from streamer
+    # Stream results with memory monitoring
+    for token in streamer:
+        yield token
+        # Periodically check memory usage and clear cache if needed
+        if torch.cuda.memory_allocated() > initial_memory * 1.5:  # 50% increase
+            torch.cuda.empty_cache()
 
-    # Clear CUDA cache to free memory
+    # Clear CUDA cache to free memory after generation
     torch.cuda.empty_cache()
