@@ -37,6 +37,16 @@ def load_model(model_path, dtype=torch.bfloat16):
     from transformers import AutoConfig
     from deepseek_vl2.models.configuration_deepseek import DeepseekV2Config
     
+    # Check if GPU supports bfloat16, if not, use float16
+    import torch.cuda
+    original_dtype = dtype  # Store original requested dtype
+    if torch.cuda.is_available():
+        # Check GPU compute capability - older GPUs (like 6.x) don't support bfloat16
+        major, minor = torch.cuda.get_device_capability()
+        if major < 7:  # Older GPUs don't support bfloat16 well
+            dtype = torch.float16
+            print(f"GPU compute capability is {major}.{minor}, using float16 instead of bfloat16 for compatibility")
+
     vl_chat_processor = DeepseekVLV2Processor.from_pretrained(model_path, trust_remote_code=True)
     tokenizer = vl_chat_processor.tokenizer
 
@@ -60,15 +70,6 @@ def load_model(model_path, dtype=torch.bfloat16):
             lang_cfg.v_head_dim = 128  # Default value from the configuration file
         if not hasattr(lang_cfg, 'qk_nope_head_dim') or lang_cfg.qk_nope_head_dim is None:
             lang_cfg.qk_nope_head_dim = 128  # Default value from the configuration file
-
-    # Check if GPU supports bfloat16, if not, use float16
-    import torch.cuda
-    if torch.cuda.is_available():
-        # Check GPU compute capability - older GPUs (like 6.x) don't support bfloat16
-        major, minor = torch.cuda.get_device_capability()
-        if major < 7:  # Older GPUs don't support bfloat16 well
-            dtype = torch.float16
-            print(f"GPU compute capability is {major}.{minor}, using float16 instead of bfloat16 for compatibility")
 
     vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
         model_path, config=config, trust_remote_code=True, torch_dtype=dtype
