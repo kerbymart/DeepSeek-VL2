@@ -34,11 +34,35 @@ from deepseek_vl2.models.conversation import Conversation
 
 
 def load_model(model_path, dtype=torch.bfloat16):
-    vl_chat_processor = DeepseekVLV2Processor.from_pretrained(model_path)
+    from transformers import AutoConfig
+    from deepseek_vl2.models.configuration_deepseek import DeepseekV2Config
+    
+    vl_chat_processor = DeepseekVLV2Processor.from_pretrained(model_path, trust_remote_code=True)
     tokenizer = vl_chat_processor.tokenizer
 
+    # Load model configuration and fix required parameters
+    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+    
+    # Fix language config parameters that might be missing or None
+    if hasattr(config, 'language_config'):
+        lang_cfg = config.language_config
+        
+        # Set required parameters with default values if they are None
+        if not hasattr(lang_cfg, 'use_mla') or lang_cfg.use_mla is None:
+            lang_cfg.use_mla = True
+        if not hasattr(lang_cfg, 'kv_lora_rank') or lang_cfg.kv_lora_rank is None:
+            lang_cfg.kv_lora_rank = 512  # Default value from the configuration file
+        if not hasattr(lang_cfg, 'q_lora_rank') or lang_cfg.q_lora_rank is None:
+            lang_cfg.q_lora_rank = 1536  # Default value from the configuration file
+        if not hasattr(lang_cfg, 'qk_rope_head_dim') or lang_cfg.qk_rope_head_dim is None:
+            lang_cfg.qk_rope_head_dim = 64  # Default value from the configuration file
+        if not hasattr(lang_cfg, 'v_head_dim') or lang_cfg.v_head_dim is None:
+            lang_cfg.v_head_dim = 128  # Default value from the configuration file
+        if not hasattr(lang_cfg, 'qk_nope_head_dim') or lang_cfg.qk_nope_head_dim is None:
+            lang_cfg.qk_nope_head_dim = 128  # Default value from the configuration file
+
     vl_gpt: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(
-        model_path, trust_remote_code=True, torch_dtype=dtype
+        model_path, config=config, trust_remote_code=True, torch_dtype=dtype
     )
     vl_gpt = vl_gpt.cuda().eval()
     return tokenizer, vl_gpt, vl_chat_processor
